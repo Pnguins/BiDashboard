@@ -3,3 +3,4 @@ tensorflow==2.17.0
 pandas
 numpy
 scikit-learn
+plotly==5.24.1

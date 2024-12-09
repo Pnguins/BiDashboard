@@ -59,7 +59,7 @@ if dashboard == "Customer Recommendations":
     # Display customer search results in an interactive table
     st.write("Customer Search Results:")
     edited_customers = st.data_editor(
-        filtered_customers, 
+        filtered_customers,
         disabled=('Customer Id', 'Customer Full Name', 'Customer Segment', 'Customer Country'),
         hide_index=True,
         column_config={
@@ -79,7 +79,7 @@ if dashboard == "Customer Recommendations":
 
         # Get customer profile
         customer_profile = recommender.get_customer_profile(selected_customer_id)
-        
+
         # Display customer profile
         st.subheader("Customer Profile")
         col1 = st.columns(1)[0]
@@ -88,42 +88,48 @@ if dashboard == "Customer Recommendations":
             st.write(f"**Name:** {customer_profile['Full Name']}")
             st.write(f"**Segment:** {customer_profile['Segment']}")
 
-
         # Get and display recommendations
         st.subheader(f"Top {top_n} Product Recommendations")
-        
+
         # Category filter (optional)
         category_filter = st.selectbox(
-            "Filter Recommendations by Category (Optional)", 
+            "Filter Recommendations by Category (Optional)",
             ["All"] + data['Category Name'].unique().tolist()
         )
-        
+
         # Get recommendations
         if category_filter == "All":
             recommendations = recommender.recommend_products(
-                selected_customer_id, 
+                selected_customer_id,
                 top_n=top_n
             )
         else:
             recommendations = recommender.recommend_products(
-                selected_customer_id, 
-                category=category_filter, 
+                selected_customer_id,
+                category=category_filter,
                 top_n=top_n
             )
-        
+
         # Display recommendations
         if recommendations:
             # Create a DataFrame for recommendations with customer name
             recommendation_details = data[data['Product Name'].isin(recommendations)][
                 ['Product Name', 'Product Price', 'Category Name']
             ].drop_duplicates()
-            
+
             # Append customer first and last name to the DataFrame
             recommendation_details['Customer First Name'] = customer_profile['Full Name'].split()[0]
-            recommendation_details['Customer Last Name'] = ' '.join(customer_profile['Full Name'].split()[1:])
-            
+
+            # Add inventory metrics
+            recommendation_details['DemandRate'] = recommendation_details['Product Name'].apply(
+                lambda x: recommender.get_product_demand_rate_and_lead_time(x).get('DemandRate', 'N/A')
+            )
+            recommendation_details['LeadTime'] = recommendation_details['Product Name'].apply(
+                lambda x: recommender.get_product_demand_rate_and_lead_time(x).get('LeadTime', 'N/A')
+            )
+
             st.dataframe(recommendation_details)
-            
+
             # Optional: Visualize recommendation details
             st.bar_chart(recommendation_details.set_index('Product Name')['Product Price'])
         else:
@@ -158,31 +164,31 @@ elif dashboard == "Market Recommendations":
     if st.button("Get Market Recommendations"):
         # Convert reference_date to datetime if needed in your recommender method
         reference_datetime = pd.Timestamp(reference_date)
-        
+
         # Use the market-based recommendation method
         if category == "All":
             market_recommendations = recommender.recommend_products_by_market(
-                selected_market, 
+                selected_market,
                 reference_date=reference_datetime,  # Pass as datetime
                 top_n=top_n
             )
         else:
             market_recommendations = recommender.recommend_products_by_market(
-                selected_market, 
-                category=category, 
+                selected_market,
+                category=category,
                 reference_date=reference_datetime,  # Pass as datetime
                 top_n=top_n
             )
-        
+
         # Display market recommendations
         if market_recommendations:
             # Create a DataFrame for recommendations
             recommendation_details = data[data['Product Name'].isin(market_recommendations)][
                 ['Product Name', 'Product Price', 'Category Name']
             ].drop_duplicates()
-            
+
             st.dataframe(recommendation_details)
-            
+
             # Optional: Visualize recommendation details
             st.bar_chart(recommendation_details.set_index('Product Name')['Product Price'])
         else:
@@ -255,8 +261,8 @@ elif dashboard == "Dashboard":
     elif city:
         filtered_df = df3[df3["Order City"].isin(city)]
     else:
-        filtered_df = df3[df3["Order Region"].isin(region) & 
-                        df3["Order Country"].isin(country) & 
+        filtered_df = df3[df3["Order Region"].isin(region) &
+                        df3["Order Country"].isin(country) &
                         df3["Order City"].isin(city)]
 
     # Category Sales Analysis
@@ -265,7 +271,7 @@ elif dashboard == "Dashboard":
     col1, col2 = st.columns((2))
     with col1:
         st.subheader("Category wise Sales")
-        fig = px.bar(category_df, x="Category Name", y="Sales", 
+        fig = px.bar(category_df, x="Category Name", y="Sales",
                     text=['${:,.2f}'.format(x) for x in category_df["Sales"]],
                     template="seaborn")
         st.plotly_chart(fig, use_container_width=True, height=200)
@@ -293,8 +299,8 @@ elif dashboard == "Dashboard":
     st.plotly_chart(fig2, use_container_width=True)
 
     # Sales vs Profit Scatter Plot
-    data1 = px.scatter(filtered_df, x="Sales", y="Order Profit Per Order", 
-                    size="Order Item Quantity", 
+    data1 = px.scatter(filtered_df, x="Sales", y="Order Profit Per Order",
+                    size="Order Item Quantity",
                     color="Shipping Mode")
     data1['layout'].update(
         title="Relationship between Sales and Profits",
@@ -310,7 +316,7 @@ elif dashboard == "Dashboard":
         "Days for shipping (real)": "mean",
         "Sales": "sum"
     }).reset_index()
-    fig_shipping = px.bar(shipping_analysis, x="Shipping Mode", y="Days for shipping (real)", 
+    fig_shipping = px.bar(shipping_analysis, x="Shipping Mode", y="Days for shipping (real)",
                         color="Sales", title="Average Shipping Days by Mode")
     st.plotly_chart(fig_shipping, use_container_width=True)
     # Product Trend Analysis
@@ -318,27 +324,27 @@ elif dashboard == "Dashboard":
 
     # Monthly Product Sales
     monthly_product_sales = filtered_df.groupby([
-        filtered_df["order date (DateOrders)"].dt.to_period("M").astype(str), 
+        filtered_df["order date (DateOrders)"].dt.to_period("M").astype(str),
         "Product Name"
     ])["Sales"].sum().reset_index()
 
     # Pivot table for monthly product sales
     monthly_pivot = monthly_product_sales.pivot(
-        index="order date (DateOrders)", 
-        columns="Product Name", 
+        index="order date (DateOrders)",
+        columns="Product Name",
         values="Sales"
     ).fillna(0)
 
     # Weekly Product Sales
     weekly_product_sales = filtered_df.groupby([
-        filtered_df["order date (DateOrders)"].dt.to_period("W").astype(str), 
+        filtered_df["order date (DateOrders)"].dt.to_period("W").astype(str),
         "Product Name"
     ])["Sales"].sum().reset_index()
 
     # Pivot table for weekly product sales
     weekly_pivot = weekly_product_sales.pivot(
-        index="order date (DateOrders)", 
-        columns="Product Name", 
+        index="order date (DateOrders)",
+        columns="Product Name",
         values="Sales"
     ).fillna(0)
 
@@ -348,8 +354,8 @@ elif dashboard == "Dashboard":
     with tab1:
         # Monthly trend line chart
         fig_monthly = px.line(
-            monthly_pivot.reset_index(), 
-            x="order date (DateOrders)", 
+            monthly_pivot.reset_index(),
+            x="order date (DateOrders)",
             y=monthly_pivot.columns.tolist(),
             title="Monthly Sales Trend by Product",
             labels={"value": "Sales", "variable": "Product Name"},
@@ -364,8 +370,8 @@ elif dashboard == "Dashboard":
     with tab2:
         # Weekly trend line chart
         fig_weekly = px.line(
-            weekly_pivot.reset_index(), 
-            x="order date (DateOrders)", 
+            weekly_pivot.reset_index(),
+            x="order date (DateOrders)",
             y=weekly_pivot.columns.tolist(),
             title="Weekly Sales Trend by Product",
             labels={"value": "Sales", "variable": "Product Name"},
@@ -381,7 +387,7 @@ elif dashboard == "Dashboard":
     st.subheader("Top 5 Products by Total Sales")
     top_products = filtered_df.groupby("Product Name")["Sales"].sum().nlargest(5)
     fig_top_products = px.bar(
-        top_products.reset_index(), 
+        top_products.reset_index(),
         x="Product Name",
         y="Sales",
         title="Top 5 Products by Total Sales"
@@ -389,7 +395,7 @@ elif dashboard == "Dashboard":
     st.plotly_chart(fig_top_products, use_container_width=True)
     # Download Options
     csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.download_button('Download Filtered Data', 
-                    data=csv, 
-                    file_name="Filtered_Data.csv", 
+    st.download_button('Download Filtered Data',
+                    data=csv,
+                    file_name="Filtered_Data.csv",
                     mime="text/csv")

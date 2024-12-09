@@ -5,6 +5,7 @@ import sys
 import os
 import plotly.express as px
 import plotly.figure_factory as ff
+from discountPrediction import create_dashboard_page, load_and_preprocess_data
 
 st.set_page_config(page_title="Custom Store Dashboard", page_icon=":bar_chart:", layout="wide")
 
@@ -35,7 +36,7 @@ recommender = initialize_recommender(data)
 
 # Sidebar Navigation
 st.sidebar.title("Navigation")
-dashboard = st.sidebar.radio("Choose Dashboard", ["Customer Recommendations", "Market Recommendations","Dashboard"])
+dashboard = st.sidebar.radio("Choose Dashboard", ["Customer Recommendations", "Market Recommendations","Dashboard","Discount Prediction"])
 
 if dashboard == "Customer Recommendations":
     st.title("Customer-Based Product Recommendations")
@@ -399,3 +400,5 @@ elif dashboard == "Dashboard":
                     data=csv,
                     file_name="Filtered_Data.csv",
                     mime="text/csv")
+elif dashboard == "Discount Prediction":
+    create_dashboard_page()

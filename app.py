@@ -7,9 +7,9 @@ import plotly.express as px
 import plotly.figure_factory as ff
 from discountPrediction import create_dashboard_page, load_and_preprocess_data
 
-st.set_page_config(page_title="Custom Store Dashboard", page_icon=":bar_chart:", layout="wide")
+st.set_page_config(page_title="Finale De Intelligence D Affaires", page_icon=":bar_chart:", layout="wide")
 
-st.title(" :bar_chart: Custom Store Data Analysis")
+st.title(" :bar_chart: Finale De Intelligence D Affaires")
 st.markdown('<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
 
 # Add the directory containing ItemRecommendation.py to the Python path
